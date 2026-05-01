@@ -1,0 +1,43 @@
+{
+  "systems": [
+    {
+      "id": 1776595909199,
+      "name": "Legacy payroll system",
+      "organization": "ABC Corporation",
+      "purchase_year": "2008",
+      "last_updated": "2019",
+      "vendor": "Oracle",
+      "language": "Java",
+      "users": "200"
+    }
+  ],
+  "evaluations": [
+    {
+      "id": 1776595909200,
+      "system_id": 1776595909199,
+      "technical_score": 50,
+      "business_score": 45,
+      "total_score": 47.5,
+      "recommendation": "MODERNIZE",
+      "answers": {
+        "performance": 3,
+        "security": 3,
+        "maintainability": 3,
+        "scalability": 2,
+        "reliability": 4,
+        "integration": 2,
+        "documentation": 2,
+        "tech_debt": 1,
+        "cost": 3,
+        "roi": 2,
+        "user_satisfaction": 2,
+        "strategic_fit": 2,
+        "compliance": 2,
+        "vendor_support": 2,
+        "business_continuity": 3,
+        "competitive_advantage": 2
+      },
+      "created_at": "2026-04-19T10:51:49.199Z"
+    }
+  ]
+}

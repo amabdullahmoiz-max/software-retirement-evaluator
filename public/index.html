@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Software Retirement Evaluator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a202c; }
+
+    /* NAV */
+    nav {
+      background: #1a365d; color: white; padding: 0 2rem;
+      display: flex; align-items: center; gap: 2rem; height: 60px;
+    }
+    nav .brand { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.3px; }
+    nav .brand span { color: #63b3ed; }
+    nav a {
+      color: rgba(255,255,255,0.75); text-decoration: none;
+      font-size: 0.9rem; padding: 6px 12px; border-radius: 6px; cursor: pointer;
+    }
+    nav a:hover, nav a.active { background: rgba(255,255,255,0.15); color: white; }
+    nav .spacer { flex: 1; }
+
+    /* PAGES */
+    .page { display: none; padding: 2rem; max-width: 900px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* CARDS */
+    .card {
+      background: white; border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.1rem; color: #2d3748; margin-bottom: 1rem; }
+    .card h3 { font-size: 0.95rem; color: #4a5568; margin-bottom: 0.5rem; }
+
+    /* FORMS */
+    label { display: block; font-size: 0.85rem; color: #4a5568; margin-bottom: 4px; margin-top: 1rem; }
+    input, select, textarea {
+      width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0;
+      border-radius: 8px; font-size: 0.9rem; background: #f7fafc;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { outline: none; border-color: #4299e1; background: white; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    /* BUTTONS */
+    .btn {
+      padding: 10px 24px; border-radius: 8px; border: none;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-primary { background: #3182ce; color: white; }
+    .btn-primary:hover { background: #2b6cb0; }
+    .btn-success { background: #38a169; color: white; }
+    .btn-success:hover { background: #2f855a; }
+    .btn-danger { background: #e53e3e; color: white; }
+    .btn-danger:hover { background: #c53030; }
+    .btn-secondary { background: #e2e8f0; color: #4a5568; }
+    .btn-secondary:hover { background: #cbd5e0; }
+
+    /* EVALUATION QUESTIONS */
+    .question-block {
+      border: 1.5px solid #e2e8f0; border-radius: 10px;
+      padding: 1rem 1.25rem; margin-bottom: 1rem; background: #f7fafc;
+    }
+    .question-block p { font-size: 0.9rem; color: #2d3748; margin-bottom: 0.6rem; }
+    .rating-row { display: flex; gap: 8px; align-items: center; }
+    .rating-btn {
+      width: 40px; height: 40px; border-radius: 8px; border: 1.5px solid #e2e8f0;
+      background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      color: #4a5568; transition: all 0.15s;
+    }
+    .rating-btn:hover { border-color: #4299e1; color: #3182ce; }
+    .rating-btn.selected { background: #3182ce; color: white; border-color: #3182ce; }
+    .rating-label { font-size: 0.75rem; color: #718096; margin-left: 8px; }
+
+    /* RESULTS */
+    .score-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .score-card {
+      text-align: center; padding: 1.25rem; border-radius: 10px;
+      border: 1.5px solid #e2e8f0;
+    }
+    .score-card .label { font-size: 0.75rem; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
+    .score-card .value { font-size: 2rem; font-weight: 700; margin: 6px 0; }
+    .score-card .sub { font-size: 0.8rem; color: #718096; }
+
+    .rec-box {
+      text-align: center; padding: 1.5rem; border-radius: 12px;
+      font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;
+    }
+    .rec-RETIRE { background: #fff5f5; color: #c53030; border: 2px solid #fc8181; }
+    .rec-MODERNIZE { background: #fffbeb; color: #b7791f; border: 2px solid #f6ad55; }
+    .rec-MAINTAIN { background: #f0fff4; color: #276749; border: 2px solid #68d391; }
+
+    /* PROGRESS BAR */
+    .progress-bar-wrap { background: #e2e8f0; border-radius: 999px; height: 10px; margin: 6px 0 12px; }
+    .progress-bar { height: 10px; border-radius: 999px; background: #3182ce; transition: width 0.4s; }
+
+    /* HISTORY TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th { background: #f7fafc; padding: 10px 12px; text-align: left; color: #4a5568; border-bottom: 2px solid #e2e8f0; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+    tr:hover td { background: #f7fafc; }
+
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      font-size: 0.75rem; font-weight: 700;
+    }
+    .badge-RETIRE { background: #fff5f5; color: #c53030; }
+    .badge-MODERNIZE { background: #fffbeb; color: #b7791f; }
+    .badge-MAINTAIN { background: #f0fff4; color: #276749; }
+
+    /* HOME HERO */
+    .hero {
+      background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+      color: white; border-radius: 16px; padding: 3rem 2rem; text-align: center; margin-bottom: 2rem;
+    }
+    .hero h1 { font-size: 2rem; margin-bottom: 0.75rem; }
+    .hero p { color: rgba(255,255,255,0.8); font-size: 1rem; margin-bottom: 1.5rem; line-height: 1.6; }
+
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .feature-card {
+      background: white; border-radius: 12px; padding: 1.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07); text-align: center;
+    }
+    .feature-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .feature-card h3 { font-size: 0.95rem; color: #2d3748; margin-bottom: 0.4rem; }
+    .feature-card p { font-size: 0.82rem; color: #718096; line-height: 1.5; }
+
+    .step-indicator {
+      display: flex; align-items: center; gap: 0; margin-bottom: 2rem;
+    }
+    .step {
+      flex: 1; text-align: center; padding: 10px 6px;
+      font-size: 0.8rem; color: #718096; border-bottom: 3px solid #e2e8f0;
+    }
+    .step.active { color: #3182ce; border-bottom-color: #3182ce; font-weight: 600; }
+    .step.done { color: #38a169; border-bottom-color: #38a169; }
+
+    .section-title {
+      font-size: 1rem; font-weight: 700; color: #2d3748;
+      padding: 1rem 0 0.5rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-badge {
+      background: #ebf8ff; color: #3182ce; font-size: 0.75rem;
+      padding: 2px 10px; border-radius: 999px; font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">Software <span>Retirement</span> Evaluator</div>
+  <a onclick="showPage('home')" id="nav-home" class="active">Home</a>
+  <a onclick="showPage('evaluate')" id="nav-evaluate">New Evaluation</a>
+  <a onclick="showPage('history')" id="nav-history">History</a>
+  <a onclick="showPage('about')" id="nav-about">About</a>
+  <div class="spacer"></div>
+  <span style="font-size:0.8rem;color:rgba(255,255,255,0.5);">SE Project — Group 3</span>
+</nav>
+
+<!-- ============ HOME PAGE ============ -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <h1>Should You Retire Your Software?</h1>
+    <p>Answer our structured evaluation based on technical and business criteria<br>
+    and get a data-driven recommendation for your organization.</p>
+    <button class="btn btn-success" onclick="showPage('evaluate')">Start New Evaluation →</button>
+  </div>
+
+  <div class="features">
+    <div class="feature-card">
+      <div class="icon">⚙️</div>
+      <h3>Technical Analysis</h3>
+      <p>Evaluate performance, security, maintainability, scalability, and technical debt.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📊</div>
+      <h3>Business Analysis</h3>
+      <p>Assess ROI, user satisfaction, strategic alignment, and vendor support.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📋</div>
+      <h3>Clear Recommendation</h3>
+      <p>Get a scored recommendation: Maintain, Modernize, or Retire the system.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Recent Evaluations</h2>
+    <div id="home-recent"></div>
+  </div>
+</div>
+
+<!-- ============ EVALUATE PAGE ============ -->
+<div id="page-evaluate" class="page">
+  <div class="step-indicator">
+    <div class="step active" id="step1">1. System Info</div>
+    <div class="step" id="step2">2. Technical Criteria</div>
+    <div class="step" id="step3">3. Business Criteria</div>
+    <div class="step" id="step4">4. Results</div>
+  </div>
+
+  <!-- Step 1: System Info -->
+  <div id="eval-step1">
+    <div class="card">
+      <h2>Software System Information</h2>
+      <p style="font-size:0.85rem;color:#718096;margin-bottom:1rem;">
+        Enter details about the software system you want to evaluate.
+      </p>
+      <div class="form-row">
+        <div>
+          <label>System / Software Name *</label>
+          <input type="text" id="sys-name" placeholder="e.g. Legacy Payroll System" />
+        </div>
+        <div>
+          <label>Organization Name *</label>
+          <input type="text" id="sys-org" placeholder="e.g. ABC Corporation" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>Year Purchased / Developed</label>
+          <input type="number" id="sys-purchase" placeholder="e.g. 2008" min="1970" max="2025"/>
+        </div>
+        <div>
+          <label>Last Major Update Year</label>
+          <input type="number" id="sys-updated" placeholder="e.g. 2019" min="1970" max="2025"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>Vendor / Developer</label>
+          <input type="text" id="sys-vendor" placeholder="e.g. SAP, In-house, Oracle"/>
+        </div>
+        <div>
+          <label>Programming Language / Platform</label>
+          <input type="text" id="sys-lang" placeholder="e.g. COBOL, Java, .NET"/>
+        </div>
+      </div>
+      <div>
+        <label>Number of Active Users</label>
+        <input type="number" id="sys-users" placeholder="e.g. 200" min="1"/>
+      </div>
+      <div style="margin-top:1.5rem;text-align:right;">
+        <button class="btn btn-primary" onclick="goToStep(2)">Next: Technical Criteria →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Technical Questions -->
+  <div id="eval-step2" style="display:none">
+    <div class="card">
+      <div class="section-title">
+        Technical Evaluation Criteria
+        <span class="section-badge">8 Questions</span>
+      </div>
+      <p style="font-size:0.83rem;color:#718096;margin-bottom:1.5rem;">
+        Rate each criterion from 1 (Very Poor) to 5 (Excellent). 
+        A low score means the system is performing badly in this area.
+      </p>
+      <div id="technical-questions"></div>
+      <div style="margin-top:1.5rem;display:flex;gap:1rem;justify-content:space-between;">
+        <button class="btn btn-secondary" onclick="goToStep(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goToStep(3)">Next: Business Criteria →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Business Questions -->
+  <div id="eval-step3" style="display:none">
+    <div class="card">
+      <div class="section-title">
+        Business Evaluation Criteria
+        <span class="section-badge">8 Questions</span>
+      </div>
+      <p style="font-size:0.83rem;color:#718096;margin-bottom:1.5rem;">
+        Rate each business criterion. Consider financial, strategic, and operational perspectives.
+      </p>
+      <div id="business-questions"></div>
+      <div style="margin-top:1.5rem;display:flex;gap:1rem;justify-content:space-between;">
+        <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
+        <button class="btn btn-success" onclick="submitEvaluation()">Submit & Get Results ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: Results -->
+  <div id="eval-step4" style="display:none">
+    <div id="results-container"></div>
+  </div>
+</div>
+
+<!-- ============ HISTORY PAGE ============ -->
+<div id="page-history" class="page">
+  <div class="card">
+    <h2>Evaluation History</h2>
+    <p style="font-size:0.85rem;color:#718096;margin-bottom:1rem;">
+      All past evaluations stored in the database.
+    </p>
+    <div id="history-table"></div>
+  </div>
+</div>
+
+<!-- ============ ABOUT PAGE ============ -->
+<div id="page-about" class="page">
+  <div class="card">
+    <h2>About This Project</h2>
+    <p style="line-height:1.7;color:#4a5568;margin-bottom:1rem;">
+      This tool is a Software Engineering project that helps organizations decide 
+      <strong>when to retire a software system</strong> using structured technical and business evaluation criteria.
+    </p>
+    <h3 style="margin-bottom:0.5rem;color:#2d3748;">Technical Criteria Explained</h3>
+    <ul style="font-size:0.88rem;color:#4a5568;line-height:2;padding-left:1.2rem;margin-bottom:1rem;">
+      <li><strong>Performance:</strong> Speed, response time, throughput</li>
+      <li><strong>Security:</strong> Vulnerability exposure, patch status, compliance</li>
+      <li><strong>Maintainability:</strong> Ease of updates, code quality</li>
+      <li><strong>Scalability:</strong> Ability to handle growing demand</li>
+      <li><strong>Reliability:</strong> Uptime, error rates, failure frequency</li>
+      <li><strong>Integration:</strong> Compatibility with modern systems/APIs</li>
+      <li><strong>Documentation:</strong> Availability and quality of documentation</li>
+      <li><strong>Technical Debt:</strong> Accumulated shortcuts and outdated components</li>
+    </ul>
+    <h3 style="margin-bottom:0.5rem;color:#2d3748;">Business Criteria Explained</h3>
+    <ul style="font-size:0.88rem;color:#4a5568;line-height:2;padding-left:1.2rem;margin-bottom:1rem;">
+      <li><strong>Cost Efficiency:</strong> Maintenance cost vs. value delivered</li>
+      <li><strong>ROI:</strong> Return on investment over time</li>
+      <li><strong>User Satisfaction:</strong> End-user experience and feedback</li>
+      <li><strong>Strategic Fit:</strong> Alignment with organization's future goals</li>
+      <li><strong>Regulatory Compliance:</strong> Meeting legal and compliance needs</li>
+      <li><strong>Vendor Support:</strong> Availability of vendor patches and help</li>
+      <li><strong>Business Continuity:</strong> Risk of system failure impacting operations</li>
+      <li><strong>Competitive Advantage:</strong> Does it provide a market edge?</li>
+    </ul>
+    <h3 style="margin-bottom:0.5rem;color:#2d3748;">Scoring Method</h3>
+    <p style="font-size:0.88rem;color:#4a5568;line-height:1.7;">
+      Each criterion is rated 1–5. Technical and Business scores are calculated as percentages.
+      The final score is the average of both:<br><br>
+      <strong>≥ 70%</strong> → MAINTAIN the system<br>
+      <strong>45–69%</strong> → MODERNIZE (upgrade key components)<br>
+      <strong>&lt; 45%</strong> → RETIRE (replace the system)
+    </p>
+  </div>
+  <div class="card">
+    <h2>Project Team</h2>
+    <p style="font-size:0.88rem;color:#4a5568;line-height:1.8;">
+      <strong>Subject:</strong> Software Engineering<br>
+      <strong>Topic:</strong> When Should an Organization Retire a Software System?<br>
+      <strong>Group:</strong> 3 members<br>
+      <strong>Technology:</strong> Node.js + Express (Backend) · HTML/CSS/JS (Frontend) · JSON File Database
+    </p>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:3000/api';
+
+  const technicalQuestions = [
+    { key: 'performance', label: 'System Performance', desc: 'How well does the system perform in terms of speed, response time, and throughput?' },
+    { key: 'security', label: 'Security Posture', desc: 'How secure is the system? Are vulnerabilities being patched? Is it compliant with security standards?' },
+    { key: 'maintainability', label: 'Maintainability', desc: 'How easy is it for developers to maintain, update, and fix the system?' },
+    { key: 'scalability', label: 'Scalability', desc: 'Can the system handle increasing workloads and growing user demand?' },
+    { key: 'reliability', label: 'Reliability & Uptime', desc: 'How reliable is the system? Does it crash often or have high error rates?' },
+    { key: 'integration', label: 'Integration Capability', desc: 'How well does the system integrate with modern APIs, tools, and other systems?' },
+    { key: 'documentation', label: 'Documentation Quality', desc: 'Is there sufficient and up-to-date documentation for the system?' },
+    { key: 'tech_debt', label: 'Technical Debt Level', desc: 'Rate the INVERSE of technical debt — 5 = very low debt (good), 1 = extremely high debt (bad)' },
+  ];
+
+  const businessQuestions = [
+    { key: 'cost', label: 'Cost Efficiency', desc: 'Is the cost of running and maintaining this system justified by the value it delivers?' },
+    { key: 'roi', label: 'Return on Investment (ROI)', desc: 'Has the system delivered adequate return on the initial and ongoing investment?' },
+    { key: 'user_satisfaction', label: 'User Satisfaction', desc: 'How satisfied are the end users and stakeholders with the system?' },
+    { key: 'strategic_fit', label: 'Strategic Alignment', desc: 'How well does the system align with the organization\'s current and future strategic goals?' },
+    { key: 'compliance', label: 'Regulatory Compliance', desc: 'Does the system meet all current legal and regulatory compliance requirements?' },
+    { key: 'vendor_support', label: 'Vendor / Community Support', desc: 'Is the vendor still providing updates, patches, and support? Is the community active?' },
+    { key: 'business_continuity', label: 'Business Continuity Risk', desc: 'Rate the INVERSE of risk — 5 = very low risk (good), 1 = critical risk to operations (bad)' },
+    { key: 'competitive_advantage', label: 'Competitive Advantage', desc: 'Does this system provide a competitive advantage or at minimum keep the org competitive?' },
+  ];
+
+  const answers = {};
+  let currentStep = 1;
+
+  function renderQuestions(questions, containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    questions.forEach(q => {
+      const div = document.createElement('div');
+      div.className = 'question-block';
+      div.innerHTML = `
+        <p><strong>${q.label}</strong></p>
+        <p style="font-size:0.82rem;color:#718096;margin-bottom:0.8rem;">${q.desc}</p>
+        <div class="rating-row">
+          ${[1,2,3,4,5].map(n => `
+            <button class="rating-btn ${answers[q.key] === n ? 'selected' : ''}"
+              onclick="selectRating('${q.key}', ${n}, this)">${n}</button>
+          `).join('')}
+          <span class="rating-label">1 = Very Poor &nbsp;|&nbsp; 5 = Excellent</span>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function selectRating(key, value, btn) {
+    answers[key] = value;
+    const row = btn.parentElement;
+    row.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function goToStep(step) {
+    if (step === 2) {
+      const name = document.getElementById('sys-name').value.trim();
+      const org = document.getElementById('sys-org').value.trim();
+      if (!name || !org) { alert('Please enter System Name and Organization Name.'); return; }
+    }
+    if (step === 3) {
+      const techKeys = technicalQuestions.map(q => q.key);
+      const missing = techKeys.filter(k => !answers[k]);
+      if (missing.length > 0) { alert(`Please answer all technical questions. ${missing.length} unanswered.`); return; }
+    }
+
+    currentStep = step;
+    document.querySelectorAll('[id^="eval-step"]').forEach(el => el.style.display = 'none');
+    document.getElementById('eval-step' + step).style.display = 'block';
+
+    document.querySelectorAll('.step').forEach((el, i) => {
+      el.classList.remove('active', 'done');
+      if (i + 1 < step) el.classList.add('done');
+      else if (i + 1 === step) el.classList.add('active');
+    });
+
+    if (step === 2) renderQuestions(technicalQuestions, 'technical-questions');
+    if (step === 3) renderQuestions(businessQuestions, 'business-questions');
+  }
+
+  async function submitEvaluation() {
+    const busKeys = businessQuestions.map(q => q.key);
+    const missing = busKeys.filter(k => !answers[k]);
+    if (missing.length > 0) { alert(`Please answer all business questions. ${missing.length} unanswered.`); return; }
+
+    const system = {
+      name: document.getElementById('sys-name').value.trim(),
+      organization: document.getElementById('sys-org').value.trim(),
+      purchase_year: document.getElementById('sys-purchase').value || null,
+      last_updated: document.getElementById('sys-updated').value || null,
+      vendor: document.getElementById('sys-vendor').value.trim() || null,
+      language: document.getElementById('sys-lang').value.trim() || null,
+      users: document.getElementById('sys-users').value || null,
+    };
+
+    try {
+      const res = await fetch(`${API}/evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ system, answers })
+      });
+      const data = await res.json();
+      showResults(data, system);
+      goToStep(4);
+    } catch (e) {
+      alert('Error connecting to server. Make sure the backend is running on port 3000.');
+    }
+  }
+
+  function showResults(data, system) {
+    const recColors = { RETIRE: '#c53030', MODERNIZE: '#b7791f', MAINTAIN: '#276749' };
+    const recDesc = {
+      RETIRE: 'The system should be decommissioned and replaced. It no longer delivers sufficient technical or business value.',
+      MODERNIZE: 'The system needs significant upgrades or partial replacement. Consider a phased modernization approach.',
+      MAINTAIN: 'The system is performing well. Continue maintaining it with regular updates and monitoring.'
+    };
+    const container = document.getElementById('results-container');
+    container.innerHTML = `
+      <div class="rec-box rec-${data.recommendation}">
+        Recommendation: ${data.recommendation}
+      </div>
+      <div class="card">
+        <p style="color:#4a5568;font-size:0.9rem;margin-bottom:1.5rem;">${recDesc[data.recommendation]}</p>
+        <div class="score-grid">
+          <div class="score-card">
+            <div class="label">Technical Score</div>
+            <div class="value" style="color:#3182ce">${data.technical_score}%</div>
+            <div class="sub">out of 100%</div>
+          </div>
+          <div class="score-card">
+            <div class="label">Business Score</div>
+            <div class="value" style="color:#805ad5">${data.business_score}%</div>
+            <div class="sub">out of 100%</div>
+          </div>
+          <div class="score-card">
+            <div class="label">Overall Score</div>
+            <div class="value" style="color:${recColors[data.recommendation]}">${data.total_score}%</div>
+            <div class="sub">final verdict</div>
+          </div>
+        </div>
+        <h3 style="margin-bottom:0.5rem;">Technical Score Breakdown</h3>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" style="width:${data.technical_score}%;background:#3182ce"></div>
+        </div>
+        <h3 style="margin-bottom:0.5rem;">Business Score Breakdown</h3>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" style="width:${data.business_score}%;background:#805ad5"></div>
+        </div>
+        <h3 style="margin-bottom:0.5rem;">Overall Score</h3>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" style="width:${data.total_score}%;background:${recColors[data.recommendation]}"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>System: ${system.name} — ${system.organization}</h2>
+        <p style="font-size:0.85rem;color:#718096;">Evaluation saved to database. ID: #${data.id}</p>
+        <div style="margin-top:1rem;display:flex;gap:1rem;">
+          <button class="btn btn-primary" onclick="showPage('history')">View All History</button>
+          <button class="btn btn-secondary" onclick="resetEvaluation()">Start New Evaluation</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function resetEvaluation() {
+    Object.keys(answers).forEach(k => delete answers[k]);
+    document.getElementById('sys-name').value = '';
+    document.getElementById('sys-org').value = '';
+    document.getElementById('sys-purchase').value = '';
+    document.getElementById('sys-updated').value = '';
+    document.getElementById('sys-vendor').value = '';
+    document.getElementById('sys-lang').value = '';
+    document.getElementById('sys-users').value = '';
+    goToStep(1);
+  }
+
+  async function loadHistory() {
+    try {
+      const res = await fetch(`${API}/history`);
+      const rows = await res.json();
+      const container = document.getElementById('history-table');
+      if (rows.length === 0) {
+        container.innerHTML = '<p style="color:#718096;font-size:0.9rem;">No evaluations yet. Start one from the New Evaluation page.</p>';
+        return;
+      }
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>System</th>
+              <th>Organization</th>
+              <th>Technical</th>
+              <th>Business</th>
+              <th>Overall</th>
+              <th>Recommendation</th>
+              <th>Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr>
+                <td>${r.id}</td>
+                <td><strong>${r.name}</strong></td>
+                <td>${r.organization}</td>
+                <td>${r.technical_score}%</td>
+                <td>${r.business_score}%</td>
+                <td><strong>${r.total_score}%</strong></td>
+                <td><span class="badge badge-${r.recommendation}">${r.recommendation}</span></td>
+                <td>${new Date(r.created_at).toLocaleDateString()}</td>
+                <td>
+                  <button class="btn btn-danger" style="padding:4px 10px;font-size:0.78rem;"
+                    onclick="deleteEval(${r.id})">Delete</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    } catch(e) {
+      document.getElementById('history-table').innerHTML = '<p style="color:#e53e3e;">Could not connect to server.</p>';
+    }
+  }
+
+  async function deleteEval(id) {
+    if (!confirm('Delete this evaluation?')) return;
+    await fetch(`${API}/evaluations/${id}`, { method: 'DELETE' });
+    loadHistory();
+  }
+
+  async function loadHomeRecent() {
+    try {
+      const res = await fetch(`${API}/history`);
+      const rows = await res.json();
+      const container = document.getElementById('home-recent');
+      if (rows.length === 0) {
+        container.innerHTML = '<p style="color:#718096;font-size:0.9rem;">No evaluations yet.</p>';
+        return;
+      }
+      const recent = rows.slice(0, 5);
+      container.innerHTML = `
+        <table>
+          <thead><tr><th>System</th><th>Organization</th><th>Score</th><th>Recommendation</th></tr></thead>
+          <tbody>
+            ${recent.map(r => `
+              <tr>
+                <td><strong>${r.name}</strong></td>
+                <td>${r.organization}</td>
+                <td>${r.total_score}%</td>
+                <td><span class="badge badge-${r.recommendation}">${r.recommendation}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    } catch(e) {
+      document.getElementById('home-recent').innerHTML = '<p style="color:#718096;font-size:0.9rem;">Server not connected.</p>';
+    }
+  }
+
+  function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    document.getElementById('nav-' + page).classList.add('active');
+    if (page === 'history') loadHistory();
+    if (page === 'home') loadHomeRecent();
+  }
+
+  // Init
+  renderQuestions(technicalQuestions, 'technical-questions');
+  loadHomeRecent();
+</script>
+</body>
+</html>
